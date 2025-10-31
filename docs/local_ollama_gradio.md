@@ -11,6 +11,7 @@ python gradio_app.py
 
 - Opens `http://127.0.0.1:7860` in your browser.
 - Responses come from Biomni's `A1` agent running against your local Ollama model (`gpt-oss:20b` by default).
+- Override the host/port by exporting `GRADIO_SERVER_NAME` or `GRADIO_SERVER_PORT` (set the latter to `0` or another free port when running multiple instances).
 
 ### Optional: run in the background
 

@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import List, Tuple
+import os
+from typing import Iterable, Sequence
 
 import gradio as gr
 
@@ -27,13 +28,26 @@ AGENT = A1(
 )
 
 
-def _build_prompt(message: str, history: List[Tuple[str, str]]) -> str:
-    """Construct a prompt that includes minimal conversation context and format instructions."""
-    dialogue = []
-    for user_msg, bot_msg in history:
-        dialogue.append(f"User: {user_msg}")
-        dialogue.append(f"Assistant: {bot_msg}")
-    context = "\n".join(dialogue)
+def _iter_history(history: Sequence) -> Iterable[tuple[str, str]]:
+    """Yield (role, content) pairs from Gradio chat history in either format."""
+    for item in history:
+        if isinstance(item, dict):
+            role = item.get("role", "assistant")
+            content = item.get("content", "") or ""
+            yield role, content
+        elif isinstance(item, (list, tuple)) and len(item) == 2:
+            user_msg, bot_msg = item
+            yield "user", user_msg or ""
+            yield "assistant", bot_msg or ""
+
+
+def _build_prompt(message: str, history: Sequence) -> str:
+    """Construct a prompt that includes minimal conversation context and instructions."""
+    dialogue_lines = []
+    for role, content in _iter_history(history):
+        role_pretty = "User" if role == "user" else "Assistant"
+        dialogue_lines.append(f"{role_pretty}: {content}")
+    context = "\n".join(dialogue_lines)
     if context:
         context = "\n\nPrior conversation:\n" + context
 
@@ -45,10 +59,23 @@ def _build_prompt(message: str, history: List[Tuple[str, str]]) -> str:
     return f"{instructions}{context}{latest}"
 
 
-def respond(message: str, history: List[Tuple[str, str]]) -> str:
+def respond(message: str, history: Sequence) -> str:
     prompt = _build_prompt(message, history)
     _log, answer = AGENT.go(prompt)
     return answer
+
+
+def _resolve_launch_args() -> tuple[str, int | None]:
+    server_name = os.getenv("GRADIO_SERVER_NAME", "127.0.0.1")
+    port_env = os.getenv("GRADIO_SERVER_PORT")
+    port_value: int | None = None
+    if port_env:
+        try:
+            port_value = int(port_env)
+        except ValueError:
+            print(f"[gradio_app] Warning: invalid GRADIO_SERVER_PORT='{port_env}', falling back to auto port.")
+            port_value = None
+    return server_name, port_value
 
 
 demo = gr.ChatInterface(
@@ -58,8 +85,19 @@ demo = gr.ChatInterface(
         "Chat with Biomni's A1 agent using your local Ollama model. Each reply includes an explicit "
         "reasoning section followed by a <solution> summary."
     ),
+    type="messages",
 )
 
 
 if __name__ == "__main__":
-    demo.launch(server_name="127.0.0.1", server_port=7860, share=False)
+    hostname, port = _resolve_launch_args()
+    try:
+        demo.launch(server_name=hostname, server_port=port, share=False)
+    except OSError as exc:
+        if port is not None:
+            print(
+                f"[gradio_app] Port {port} unavailable ({exc}). Falling back to automatic port selection."
+            )
+            demo.launch(server_name=hostname, server_port=0, share=False)
+        else:
+            raise
