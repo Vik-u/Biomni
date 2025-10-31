@@ -147,7 +147,44 @@ agent.go("Plan a CRISPR screen to identify genes that regulate T cell exhaustion
 agent.go("Perform scRNA-seq annotation at [PATH] and generate meaningful hypothesis")
 agent.go("Predict ADMET properties for this compound: CC(C)CC1=CC=C(C=C1)C(C)C(=O)O")
 ```
+
+#### Controlling Datalake Loading
+
+By default, Biomni automatically downloads the datalake files (~11GB) when you create an agent. You can control this behavior:
+
+```python
+# Skip automatic datalake download (faster initialization)
+agent = A1(path='./data', llm='claude-sonnet-4-20250514', expected_data_lake_files = [])
+```
+
+This is useful for:
+- Faster testing and development
+- Environments with limited storage or bandwidth
+- Cases where you only need specific tools that don't require datalake files
 If you plan on using Azure for your model, always prefix the model name with azure- (e.g. llm='azure-gpt-4o').
+
+### Gradio Interface
+
+Launch an interactive web UI for Biomni:
+
+```python
+from biomni.agent import A1
+
+agent = A1(path='./data', llm='claude-sonnet-4-20250514')
+agent.launch_gradio_demo()
+```
+
+**Installation:**
+```bash
+pip install gradio
+```
+
+**Options:**
+- `share=True` - Create a public shareable link
+- `server_name="127.0.0.1"` - Localhost only (default: "0.0.0.0")
+- `require_verification=True` - Require access code (default code: "Biomni2025")
+
+The interface will be available at `http://localhost:7860`
 
 ### Configuration Management
 
