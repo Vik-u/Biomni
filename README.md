@@ -338,6 +338,22 @@ Experience Biomni through our no-code web interface at **[biomni.stanford.edu](h
 [![Watch the video](https://img.youtube.com/vi/E0BRvl23hLs/maxresdefault.jpg)](https://youtu.be/E0BRvl23hLs)
 
 
+## Local Ollama Wrapper (Optional)
+
+If you want to keep the default API-based setup while experimenting with a local LLM, use the helper scripts included in this repo:
+
+- `run_biomni_ollama.py`: CLI wrapper for single prompts. Example:
+
+  ```bash
+  source .venv/bin/activate
+  python run_biomni_ollama.py --prompt "Respond with your reasoning, then wrap the final summary in <solution> tags. Plan a CRISPR screen…"
+  ```
+
+- `gradio_app.py`: simple chat UI backed by the same local configuration. Launch with `python gradio_app.py`, then open `http://127.0.0.1:7860`.
+
+Both scripts override `default_config` only within their own process, so the core package continues to default to Anthropic/OpenAI/Groq/etc. Detailed launch/stop instructions are in [`docs/local_ollama_gradio.md`](docs/local_ollama_gradio.md).
+
+
 ## Important Note
 - Security warning: Currently, Biomni executes LLM-generated code with full system privileges. If you want to use it in production, please use in isolated/sandboxed environments. The agent can access files, network, and system commands. Be careful with sensitive data or credentials.
 - This release was frozen as of April 15 2025, so it differs from the current web platform.
